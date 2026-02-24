@@ -1,0 +1,500 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+<meta name="apple-mobile-web-app-title" content="TaskMate"/>
+<meta name="theme-color" content="#4F46E5"/>
+<title>TaskMate</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display',sans-serif}
+body{background:#f1f5f9;display:flex;justify-content:center;min-height:100vh}
+#app{width:100%;max-width:430px;background:#fff;min-height:100vh;display:flex;flex-direction:column;position:relative;box-shadow:0 0 40px rgba(0,0,0,0.15)}
+.header{background:linear-gradient(135deg,#4F46E5,#7C3AED);padding:env(safe-area-inset-top) 20px 20px;padding-top:calc(env(safe-area-inset-top) + 12px)}
+.header-row{display:flex;justify-content:space-between;align-items:center}
+.header h1{color:#fff;font-size:24px;font-weight:700}
+.header p{color:rgba(255,255,255,0.7);font-size:13px;margin-bottom:2px}
+.add-btn{width:40px;height:40px;background:rgba(255,255,255,0.2);border:none;border-radius:50%;color:#fff;font-size:26px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:.2s}
+.add-btn:active{transform:scale(0.92)}
+.tabs{display:flex;background:#fff;border-bottom:1px solid #f1f5f9}
+.tab{flex:1;padding:12px 4px;border:none;background:none;font-size:12px;font-weight:600;color:#9ca3af;cursor:pointer;border-bottom:2px solid transparent;transition:.2s}
+.tab.active{color:#4F46E5;border-bottom-color:#4F46E5}
+.content{flex:1;overflow-y:auto;padding-bottom:100px}
+.page{display:none;padding:16px}
+.page.active{display:block}
+
+/* Cards */
+.progress-card{background:linear-gradient(135deg,#4F46E5,#7C3AED);border-radius:20px;padding:20px;color:#fff;margin-bottom:16px}
+.progress-card p.sub{color:rgba(255,255,255,0.7);font-size:13px;margin-bottom:12px}
+.progress-row{display:flex;align-items:center;gap:20px}
+.ring-wrap{position:relative;width:80px;height:80px;flex-shrink:0}
+.ring-wrap svg{transform:rotate(-90deg)}
+.ring-label{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:700;color:#fff}
+.progress-info p.big{font-size:28px;font-weight:700}
+.progress-info p.small{font-size:13px;color:rgba(255,255,255,0.7)}
+.overdue-badge{font-size:11px;color:#fca5a5;font-weight:600;margin-top:4px}
+
+.stat-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:16px}
+.stat-card{border-radius:16px;padding:12px;text-align:center}
+.stat-card .num{font-size:24px;font-weight:700}
+.stat-card .lbl{font-size:11px;font-weight:600;margin-top:2px}
+.stat-todo{background:#f1f5f9;color:#475569}
+.stat-prog{background:#dbeafe;color:#1d4ed8}
+.stat-done{background:#d1fae5;color:#065f46}
+
+.alert{border-radius:16px;padding:14px;display:flex;align-items:center;gap:12px;margin-bottom:16px}
+.alert-red{background:#fef2f2;border:1px solid #fecaca}
+.alert-amber{background:#fffbeb;border:1px solid #fde68a}
+.alert .icon{font-size:22px}
+.alert .title{font-size:13px;font-weight:700}
+.alert .sub{font-size:11px;margin-top:2px}
+.alert-red .title{color:#dc2626}.alert-red .sub{color:#f87171}
+.alert-amber .title{color:#b45309}.alert-amber .sub{color:#d97706}
+
+.section-title{font-size:13px;font-weight:700;color:#374151;margin-bottom:10px}
+.pri-bar-wrap{margin-bottom:12px}
+.pri-bar-wrap:last-child{margin-bottom:0}
+.pri-bar-row{display:flex;justify-content:space-between;font-size:11px;margin-bottom:4px}
+.pri-bar-track{height:8px;background:#f1f5f9;border-radius:99px;overflow:hidden}
+.pri-bar-fill{height:100%;border-radius:99px;transition:width .5s ease}
+.bar-high{background:#ef4444}.bar-medium{background:#f59e0b}.bar-low{background:#22c55e}
+.text-high{color:#dc2626;font-weight:700}.text-medium{color:#b45309;font-weight:700}.text-low{color:#16a34a;font-weight:700}
+.section-box{background:#fff;border:1px solid #f1f5f9;border-radius:16px;padding:14px;box-shadow:0 1px 4px rgba(0,0,0,0.04);margin-bottom:16px}
+
+/* Task Card */
+.task-card{background:#fff;border:1px solid #f1f5f9;border-radius:16px;padding:14px;margin-bottom:10px;box-shadow:0 1px 3px rgba(0,0,0,0.04)}
+.task-card.overdue{border-color:#fecaca;background:#fff5f5}
+.task-row{display:flex;align-items:flex-start;gap:12px}
+.status-btn{width:28px;height:28px;border-radius:50%;border:none;cursor:pointer;font-size:14px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px;transition:.2s}
+.status-btn:active{transform:scale(0.88)}
+.s-todo{background:#f1f5f9;color:#475569}
+.s-prog{background:#dbeafe;color:#1d4ed8}
+.s-done{background:#d1fae5;color:#065f46}
+.task-info{flex:1;min-width:0}
+.task-title{font-size:14px;font-weight:600;color:#1f2937;line-height:1.3}
+.task-title.done{text-decoration:line-through;color:#9ca3af}
+.task-tags{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px;align-items:center}
+.tag{font-size:11px;padding:2px 8px;border-radius:99px;font-weight:600}
+.tag-high{background:#fef2f2;color:#dc2626}
+.tag-medium{background:#fffbeb;color:#b45309}
+.tag-low{background:#f0fdf4;color:#16a34a}
+.tag-todo{background:#f1f5f9;color:#475569}
+.tag-prog{background:#dbeafe;color:#1d4ed8}
+.tag-done{background:#d1fae5;color:#065f46}
+.tag-date{font-size:11px;color:#9ca3af}
+.tag-date.red{color:#ef4444;font-weight:700}
+.tag-cat{font-size:11px;color:#d1d5db}
+.task-actions{display:flex;flex-direction:column;gap:4px}
+.task-actions button{background:none;border:none;cursor:pointer;font-size:14px;padding:4px;opacity:.4;transition:.2s}
+.task-actions button:hover{opacity:1}
+
+/* Filters */
+.filter-row{display:flex;gap:8px;overflow-x:auto;padding-bottom:6px;margin-bottom:10px;scrollbar-width:none}
+.filter-row::-webkit-scrollbar{display:none}
+.filter-btn{padding:6px 14px;border-radius:99px;border:none;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;transition:.2s}
+.filter-btn:active{transform:scale(0.95)}
+.filter-btn.active-status{background:#4F46E5;color:#fff}
+.filter-btn.active-pri{background:#7C3AED;color:#fff}
+.filter-btn.inactive{background:#f1f5f9;color:#6b7280}
+.sort-select{margin-left:auto;padding:6px 10px;border-radius:99px;border:none;font-size:12px;background:#f1f5f9;color:#6b7280;outline:none;flex-shrink:0}
+
+/* Stuck Tab */
+.stuck-card{background:#fff;border:2px solid #fde68a;border-radius:16px;padding:14px;margin-bottom:12px}
+.stuck-card.urgent{border-color:#fca5a5}
+.stuck-urgent-label{font-size:11px;color:#dc2626;font-weight:700;margin-bottom:6px}
+.stuck-title{font-size:15px;font-weight:700;color:#1f2937}
+.done-btn{width:100%;margin-top:12px;padding:12px;background:#22c55e;color:#fff;font-size:13px;font-weight:700;border:none;border-radius:12px;cursor:pointer;transition:.2s}
+.done-btn:active{background:#16a34a;transform:scale(0.98)}
+.empty{text-align:center;padding:60px 20px;color:#9ca3af;font-size:14px}
+.empty .emoji{font-size:40px;margin-bottom:10px}
+
+/* FAB */
+.fab{position:absolute;bottom:calc(24px + env(safe-area-inset-bottom));right:20px;width:56px;height:56px;background:#4F46E5;border:none;border-radius:50%;color:#fff;font-size:28px;cursor:pointer;box-shadow:0 4px 20px rgba(79,70,229,0.5);display:flex;align-items:center;justify-content:center;transition:.2s}
+.fab:active{transform:scale(0.92)}
+
+/* Modal */
+.overlay{position:absolute;inset:0;background:rgba(0,0,0,0.5);display:none;align-items:flex-end;z-index:100}
+.overlay.open{display:flex}
+.modal{background:#fff;width:100%;border-radius:24px 24px 0 0;padding:24px;max-height:85vh;overflow-y:auto}
+.modal h2{font-size:17px;font-weight:700;color:#1f2937}
+.modal-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px}
+.close-btn{background:none;border:none;font-size:20px;color:#9ca3af;cursor:pointer;width:32px;height:32px;display:flex;align-items:center;justify-content:center}
+.field{margin-bottom:14px}
+.field label{display:block;font-size:11px;color:#9ca3af;font-weight:700;text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px}
+.field input,.field select{width:100%;border:1px solid #e5e7eb;border-radius:12px;padding:12px 14px;font-size:14px;outline:none;background:#f9fafb;transition:.2s;-webkit-appearance:none}
+.field input:focus,.field select:focus{border-color:#4F46E5}
+.field-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.save-btn{width:100%;padding:16px;background:#4F46E5;color:#fff;font-size:14px;font-weight:700;border:none;border-radius:16px;cursor:pointer;margin-top:6px;transition:.2s}
+.save-btn:active{background:#4338ca;transform:scale(0.98)}
+.no-tasks{text-align:center;padding:40px 20px;color:#9ca3af;font-size:13px}
+</style>
+</head>
+<body>
+<div id="app">
+  <div class="header">
+    <div class="header-row">
+      <div>
+        <p id="greeting">Good morning,</p>
+        <h1>Srikanth 👋</h1>
+      </div>
+      <button class="add-btn" onclick="openModal()">+</button>
+    </div>
+  </div>
+
+  <div class="tabs">
+    <button class="tab active" onclick="switchTab('dashboard',this)">📊 Dashboard</button>
+    <button class="tab" onclick="switchTab('tasks',this)">📋 Tasks</button>
+    <button class="tab" onclick="switchTab('stuck',this)">⚠️ Stuck</button>
+  </div>
+
+  <div class="content">
+    <div id="dashboard" class="page active"></div>
+    <div id="tasks" class="page"></div>
+    <div id="stuck" class="page"></div>
+  </div>
+
+  <button class="fab" onclick="openModal()">+</button>
+
+  <div class="overlay" id="overlay" onclick="handleOverlayClick(event)">
+    <div class="modal">
+      <div class="modal-header">
+        <h2 id="modal-title">New Task</h2>
+        <button class="close-btn" onclick="closeModal()">✕</button>
+      </div>
+      <div class="field">
+        <label>Task Title *</label>
+        <input id="f-title" type="text" placeholder="What needs to be done?"/>
+      </div>
+      <div class="field-row">
+        <div class="field">
+          <label>Priority</label>
+          <select id="f-priority">
+            <option>High</option>
+            <option selected>Medium</option>
+            <option>Low</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Status</label>
+          <select id="f-status">
+            <option>To Do</option>
+            <option>In Progress</option>
+            <option>Done</option>
+          </select>
+        </div>
+      </div>
+      <div class="field-row">
+        <div class="field">
+          <label>Due Date</label>
+          <input id="f-date" type="date"/>
+        </div>
+        <div class="field">
+          <label>Category</label>
+          <select id="f-category">
+            <option>Work</option>
+            <option>Personal</option>
+            <option>Health</option>
+            <option>Finance</option>
+            <option>Other</option>
+          </select>
+        </div>
+      </div>
+      <button class="save-btn" onclick="saveTask()">Add Task ✓</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const TODAY = new Date().toISOString().split("T")[0];
+
+// Greeting
+const hr = new Date().getHours();
+document.getElementById("greeting").textContent = hr<12?"Good morning,":hr<17?"Good afternoon,":"Good evening,";
+
+// Data
+let tasks = JSON.parse(localStorage.getItem("taskmate")||"null") || [
+  {id:1,title:"Review project proposal",priority:"High",status:"Done",dueDate:"2026-02-20",category:"Work"},
+  {id:2,title:"Send weekly report",priority:"High",status:"In Progress",dueDate:"2026-02-25",category:"Work"},
+  {id:3,title:"Schedule team meeting",priority:"Medium",status:"To Do",dueDate:"2026-02-26",category:"Work"},
+  {id:4,title:"Update portfolio website",priority:"Low",status:"To Do",dueDate:"2026-03-01",category:"Personal"},
+  {id:5,title:"Read design book",priority:"Low",status:"In Progress",dueDate:"2026-03-05",category:"Personal"},
+];
+let editId = null;
+let filterStatus = "All", filterPri = "All", sortBy = "dueDate";
+
+function save(){ localStorage.setItem("taskmate", JSON.stringify(tasks)); }
+function isOverdue(t){ return t.dueDate && t.dueDate < TODAY && t.status !== "Done"; }
+
+// Stats
+function getStats(){
+  const total=tasks.length, done=tasks.filter(t=>t.status==="Done").length;
+  return {
+    total, done,
+    inProgress: tasks.filter(t=>t.status==="In Progress").length,
+    toDo: tasks.filter(t=>t.status==="To Do").length,
+    overdue: tasks.filter(t=>isOverdue(t)).length,
+    highPending: tasks.filter(t=>t.priority==="High"&&t.status!=="Done").length,
+    percent: total ? Math.round(done/total*100) : 0
+  };
+}
+
+function getStuck(){
+  return [...tasks].filter(t=>t.status==="In Progress").sort((a,b)=>a.dueDate.localeCompare(b.dueDate))[0]||null;
+}
+
+// Priority helpers
+const PRI_TAG = {High:"tag-high",Medium:"tag-medium",Low:"tag-low"};
+const PRI_TXT = {High:"text-high",Medium:"text-medium",Low:"text-low"};
+const PRI_BAR = {High:"bar-high",Medium:"bar-medium",Low:"bar-low"};
+const STA_TAG = {"To Do":"tag-todo","In Progress":"tag-prog","Done":"tag-done"};
+const STA_BTN = {"To Do":"s-todo","In Progress":"s-prog","Done":"s-done"};
+const STA_ICN = {"To Do":"○","In Progress":"◑","Done":"●"};
+const STATUSES = ["To Do","In Progress","Done"];
+
+// Render dashboard
+function renderDashboard(){
+  const s = getStats();
+  const stuck = getStuck();
+  const r = 32, circ = 2*Math.PI*r;
+  const offset = circ*(1-s.percent/100);
+
+  let todayTasks = tasks.filter(t=>t.dueDate===TODAY&&t.status!=="Done");
+
+  document.getElementById("dashboard").innerHTML = `
+    <div class="progress-card">
+      <p class="sub">Overall Progress</p>
+      <div class="progress-row">
+        <div class="ring-wrap">
+          <svg width="80" height="80" viewBox="0 0 80 80">
+            <circle cx="40" cy="40" r="${r}" stroke="rgba(255,255,255,0.2)" stroke-width="8" fill="none"/>
+            <circle cx="40" cy="40" r="${r}" stroke="white" stroke-width="8" fill="none"
+              stroke-dasharray="${circ}" stroke-dashoffset="${offset}" stroke-linecap="round"
+              style="transition:stroke-dashoffset .5s ease"/>
+          </svg>
+          <div class="ring-label">${s.percent}%</div>
+        </div>
+        <div class="progress-info">
+          <p class="big">${s.done}<span style="font-size:16px;opacity:.7">/${s.total}</span></p>
+          <p class="small">tasks completed</p>
+          ${s.overdue>0?`<p class="overdue-badge">⚠ ${s.overdue} overdue</p>`:""}
+        </div>
+      </div>
+    </div>
+
+    <div class="stat-grid">
+      <div class="stat-card stat-todo"><div class="num">${s.toDo}</div><div class="lbl">To Do</div></div>
+      <div class="stat-card stat-prog"><div class="num">${s.inProgress}</div><div class="lbl">In Progress</div></div>
+      <div class="stat-card stat-done"><div class="num">${s.done}</div><div class="lbl">Done</div></div>
+    </div>
+
+    ${s.highPending>0?`
+    <div class="alert alert-red">
+      <div class="icon">🔥</div>
+      <div><div class="title">${s.highPending} High Priority Pending</div><div class="sub">These need your attention first!</div></div>
+    </div>`:""}
+
+    ${stuck?`
+    <div class="alert alert-amber">
+      <div class="icon">⚠️</div>
+      <div>
+        <div class="title">Work Stopped Here</div>
+        <div class="sub" style="margin-top:4px;color:#1f2937;font-weight:600">${stuck.title}</div>
+        <div class="sub">${stuck.priority} priority · Due ${stuck.dueDate||"No date"}</div>
+        <div class="sub" style="margin-top:2px">Finish this first!</div>
+      </div>
+    </div>`:""}
+
+    <div class="section-box">
+      <div class="section-title">Priority Breakdown</div>
+      ${["High","Medium","Low"].map(p=>{
+        const cnt=tasks.filter(t=>t.priority===p).length;
+        const dn=tasks.filter(t=>t.priority===p&&t.status==="Done").length;
+        const pct=cnt?Math.round(dn/cnt*100):0;
+        return `<div class="pri-bar-wrap">
+          <div class="pri-bar-row">
+            <span class="${PRI_TXT[p]}">${p}</span>
+            <span style="color:#9ca3af;font-size:11px">${dn}/${cnt}</span>
+          </div>
+          <div class="pri-bar-track"><div class="pri-bar-fill ${PRI_BAR[p]}" style="width:${pct}%"></div></div>
+        </div>`;
+      }).join("")}
+    </div>
+
+    <div class="section-title">📅 Due Today</div>
+    ${todayTasks.length===0
+      ? `<div class="no-tasks">No tasks due today 🎉</div>`
+      : todayTasks.map(t=>taskCardHTML(t)).join("")}
+  `;
+}
+
+// Task card HTML
+function taskCardHTML(t){
+  const ov = isOverdue(t);
+  return `
+    <div class="task-card ${ov?"overdue":""}">
+      <div class="task-row">
+        <button class="status-btn ${STA_BTN[t.status]}" onclick="cycleStatus(${t.id})">${STA_ICN[t.status]}</button>
+        <div class="task-info">
+          <div class="task-title ${t.status==="Done"?"done":""}">${t.title}</div>
+          <div class="task-tags">
+            <span class="tag ${PRI_TAG[t.priority]}">${t.priority}</span>
+            <span class="tag ${STA_TAG[t.status]}">${t.status}</span>
+            ${t.dueDate?`<span class="tag-date ${ov?"red":""}">📅 ${t.dueDate}${ov?" ⚠":""}</span>`:""}
+            <span class="tag-cat">${t.category}</span>
+          </div>
+        </div>
+        <div class="task-actions">
+          <button onclick="openEditModal(${t.id})">✏️</button>
+          <button onclick="deleteTask(${t.id})">🗑️</button>
+        </div>
+      </div>
+    </div>`;
+}
+
+// Render tasks
+function renderTasks(){
+  let list = [...tasks];
+  if(filterStatus!=="All") list=list.filter(t=>t.status===filterStatus);
+  if(filterPri!=="All") list=list.filter(t=>t.priority===filterPri);
+  if(sortBy==="dueDate") list.sort((a,b)=>a.dueDate.localeCompare(b.dueDate));
+  else if(sortBy==="priority") list.sort((a,b)=>["High","Medium","Low"].indexOf(a.priority)-["High","Medium","Low"].indexOf(b.priority));
+  else list.sort((a,b)=>a.title.localeCompare(b.title));
+
+  const statusBtns = ["All","To Do","In Progress","Done"].map(s=>
+    `<button class="filter-btn ${filterStatus===s?"active-status":"inactive"}" onclick="setFilterStatus('${s}')">${s}</button>`
+  ).join("");
+  const priBtns = ["All","High","Medium","Low"].map(p=>
+    `<button class="filter-btn ${filterPri===p?"active-pri":"inactive"}" onclick="setFilterPri('${p}')">${p}</button>`
+  ).join("");
+
+  document.getElementById("tasks").innerHTML = `
+    <div class="filter-row">${statusBtns}</div>
+    <div class="filter-row">
+      ${priBtns}
+      <select class="sort-select" onchange="setSort(this.value)">
+        <option value="dueDate" ${sortBy==="dueDate"?"selected":""}>By Date</option>
+        <option value="priority" ${sortBy==="priority"?"selected":""}>By Priority</option>
+        <option value="title" ${sortBy==="title"?"selected":""}>By Name</option>
+      </select>
+    </div>
+    ${list.length===0
+      ? `<div class="no-tasks">No tasks found 🔍</div>`
+      : list.map(t=>taskCardHTML(t)).join("")}
+  `;
+}
+
+// Render stuck
+function renderStuck(){
+  const inProg = [...tasks].filter(t=>t.status==="In Progress").sort((a,b)=>a.dueDate.localeCompare(b.dueDate));
+  const overdueNotStarted = tasks.filter(t=>t.status==="To Do"&&isOverdue(t));
+
+  document.getElementById("stuck").innerHTML = `
+    <div class="alert alert-amber" style="margin-bottom:16px">
+      <div class="icon">🔍</div>
+      <div><div class="title">Where Did You Stop?</div><div class="sub">In Progress tasks that need your attention!</div></div>
+    </div>
+
+    ${inProg.length===0?`
+      <div class="empty"><div class="emoji">🎯</div><div>No blocked tasks!</div><div style="margin-top:6px;font-size:12px">Everything is done or not started yet.</div></div>
+    `:inProg.map((t,i)=>`
+      <div class="stuck-card ${i===0?"urgent":""}">
+        ${i===0?`<div class="stuck-urgent-label">🔴 MOST URGENT — Tackle this first!</div>`:""}
+        <div class="stuck-title">${t.title}</div>
+        <div class="task-tags" style="margin-top:8px">
+          <span class="tag ${PRI_TAG[t.priority]}">${t.priority}</span>
+          <span class="tag-date ${isOverdue(t)?"red":""}">📅 ${t.dueDate||"No date"}${isOverdue(t)?" ⚠":""}</span>
+          ${isOverdue(t)?`<span class="tag tag-high">Overdue!</span>`:""}
+        </div>
+        <button class="done-btn" onclick="markDone(${t.id})">✓ Mark as Done</button>
+      </div>
+    `).join("")}
+
+    ${overdueNotStarted.length>0?`
+      <div class="section-title" style="color:#dc2626;margin-top:8px">⏰ Overdue & Not Started</div>
+      ${overdueNotStarted.map(t=>taskCardHTML(t)).join("")}
+    `:""}
+  `;
+}
+
+function render(){
+  renderDashboard();
+  renderTasks();
+  renderStuck();
+}
+
+// Actions
+function cycleStatus(id){
+  tasks = tasks.map(t=>{
+    if(t.id!==id) return t;
+    return {...t, status: STATUSES[(STATUSES.indexOf(t.status)+1)%3]};
+  });
+  save(); render();
+}
+function markDone(id){
+  tasks = tasks.map(t=> t.id===id ? {...t,status:"Done"} : t);
+  save(); render();
+}
+function deleteTask(id){
+  if(confirm("Delete this task?")){ tasks=tasks.filter(t=>t.id!==id); save(); render(); }
+}
+function setFilterStatus(s){ filterStatus=s; renderTasks(); }
+function setFilterPri(p){ filterPri=p; renderTasks(); }
+function setSort(v){ sortBy=v; renderTasks(); }
+
+// Tab switching
+function switchTab(id, btn){
+  document.querySelectorAll(".page").forEach(p=>p.classList.remove("active"));
+  document.querySelectorAll(".tab").forEach(t=>t.classList.remove("active"));
+  document.getElementById(id).classList.add("active");
+  btn.classList.add("active");
+}
+
+// Modal
+function openModal(){
+  editId=null;
+  document.getElementById("modal-title").textContent="New Task";
+  document.getElementById("f-title").value="";
+  document.getElementById("f-priority").value="Medium";
+  document.getElementById("f-status").value="To Do";
+  document.getElementById("f-date").value="";
+  document.getElementById("f-category").value="Work";
+  document.querySelector(".save-btn").textContent="Add Task ✓";
+  document.getElementById("overlay").classList.add("open");
+}
+function openEditModal(id){
+  const t = tasks.find(x=>x.id===id);
+  editId=id;
+  document.getElementById("modal-title").textContent="Edit Task";
+  document.getElementById("f-title").value=t.title;
+  document.getElementById("f-priority").value=t.priority;
+  document.getElementById("f-status").value=t.status;
+  document.getElementById("f-date").value=t.dueDate||"";
+  document.getElementById("f-category").value=t.category;
+  document.querySelector(".save-btn").textContent="Save Changes ✓";
+  document.getElementById("overlay").classList.add("open");
+}
+function closeModal(){ document.getElementById("overlay").classList.remove("open"); }
+function handleOverlayClick(e){ if(e.target===document.getElementById("overlay")) closeModal(); }
+
+function saveTask(){
+  const title = document.getElementById("f-title").value.trim();
+  if(!title){ alert("Please enter a task title!"); return; }
+  const task = {
+    id: editId||Date.now(),
+    title,
+    priority: document.getElementById("f-priority").value,
+    status:   document.getElementById("f-status").value,
+    dueDate:  document.getElementById("f-date").value,
+    category: document.getElementById("f-category").value,
+  };
+  if(editId) tasks=tasks.map(t=>t.id===editId?task:t);
+  else tasks=[...tasks,task];
+  save(); closeModal(); render();
+}
+
+render();
+</script>
+</body>
+</html>
